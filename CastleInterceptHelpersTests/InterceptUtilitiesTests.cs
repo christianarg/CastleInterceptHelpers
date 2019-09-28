@@ -58,6 +58,31 @@ namespace CastleInterceptHelpersTests
             Assert.IsTrue(MyInterceptor.ExecutedBefore);
             Assert.IsTrue(MyInterceptor.ExecutedAfter);
         }
+
+
+        [TestMethod]
+        public void GlobalAndAttributeInterceptorTest()
+        {
+            // ARRANGE
+            RealServiceExecuted.Executed = false;
+            MyInterceptor.ResetExecuted();
+            MyOtherInterceptor.ResetExecuted();
+
+            unityContainer.RegisterType<IMyFooService, MyFooServiceWithAttributeInterceptor>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyOtherInterceptor() });
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsTrue(MyInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyInterceptor.ExecutedAfter);
+            Assert.IsTrue(MyOtherInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyOtherInterceptor.ExecutedAfter);
+        }
     }
 
     public interface IMyFooService
@@ -88,6 +113,25 @@ namespace CastleInterceptHelpersTests
     }
 
     public class MyInterceptor : IInterceptor
+    {
+        public static bool ExecutedBefore;
+        public static bool ExecutedAfter;
+
+        public static void ResetExecuted()
+        {
+            ExecutedBefore = false;
+            ExecutedAfter = false;
+        }
+
+        public void Intercept(IInvocation invocation)
+        {
+            ExecutedBefore = true;
+            invocation.Proceed();
+            ExecutedAfter = true;
+        }
+    }
+
+    public class MyOtherInterceptor : IInterceptor
     {
         public static bool ExecutedBefore;
         public static bool ExecutedAfter;
