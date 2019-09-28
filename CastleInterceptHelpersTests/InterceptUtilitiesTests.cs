@@ -21,7 +21,7 @@ namespace CastleInterceptHelpersTests
         public void GlobalInterceptorTest()
         {
             // ARRANGE
-            RealServiceExecuted.Executed = false;
+            RealServiceExecuted.ResetExecuted();
             MyInterceptor.ResetExecuted();
 
             unityContainer.RegisterType<IMyFooService, MyFooService>();
@@ -42,7 +42,7 @@ namespace CastleInterceptHelpersTests
         public void AttributeInterceptorTest()
         {
             // ARRANGE
-            RealServiceExecuted.Executed = false;
+            RealServiceExecuted.ResetExecuted();
             MyInterceptor.ResetExecuted();
 
             unityContainer.RegisterType<IMyFooService, MyFooServiceWithAttributeInterceptor>();
@@ -64,7 +64,7 @@ namespace CastleInterceptHelpersTests
         public void GlobalAndAttributeInterceptorTest()
         {
             // ARRANGE
-            RealServiceExecuted.Executed = false;
+            RealServiceExecuted.ResetExecuted();
             MyInterceptor.ResetExecuted();
             MyOtherInterceptor.ResetExecuted();
 
@@ -83,6 +83,26 @@ namespace CastleInterceptHelpersTests
             Assert.IsTrue(MyOtherInterceptor.ExecutedBefore);
             Assert.IsTrue(MyOtherInterceptor.ExecutedAfter);
         }
+
+        [TestMethod]
+        public void MustNotInterceptAttributeTest()
+        {
+            RealServiceExecuted.ResetExecuted();
+            MyInterceptor.ResetExecuted();
+
+            unityContainer.RegisterType<IMyFooService, MyFooServiceWithDoNotInterceptAttribute>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyInterceptor() });
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsFalse(MyInterceptor.ExecutedBefore);
+            Assert.IsFalse(MyInterceptor.ExecutedAfter);
+        }
     }
 
     public interface IMyFooService
@@ -93,6 +113,7 @@ namespace CastleInterceptHelpersTests
     public static class RealServiceExecuted
     {
         public static bool Executed;
+        public static bool ResetExecuted() => Executed = false;
     }
 
     public class MyFooService : IMyFooService
@@ -105,6 +126,15 @@ namespace CastleInterceptHelpersTests
 
     [InterceptWith(typeof(MyInterceptor))]
     public class MyFooServiceWithAttributeInterceptor : IMyFooService
+    {
+        public void Execute()
+        {
+            RealServiceExecuted.Executed = true;
+        }
+    }
+
+    [DoNotIntercept]
+    public class MyFooServiceWithDoNotInterceptAttribute : IMyFooService
     {
         public void Execute()
         {

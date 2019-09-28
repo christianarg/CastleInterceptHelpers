@@ -27,6 +27,9 @@ namespace CastleInterceptHelpers
                 if (!registration.RegisteredType.IsInterface)
                     continue;
 
+                if (ReflectionHelper.MustNotIntercept(registration.MappedToType))
+                    continue;
+
                 var allInterceptors = globalInterceptors.Concat(ReflectionHelper.GetAttributeInterceptors(registration.MappedToType)).ToArray();
 
                 var proxied = ProxyManager.Generator.CreateInterfaceProxyWithTarget(registration.RegisteredType, unityContainer.Resolve(registration.RegisteredType, registration.Name), allInterceptors);
@@ -43,7 +46,11 @@ namespace CastleInterceptHelpers
         {
             var interceptorTypes = type.GetCustomAttributes<InterceptWithAttribute>().Select(x => x.Interceptor).ToArray();
             return interceptorTypes.Select(x => Activator.CreateInstance(x) as IInterceptor).ToArray();
+        }
 
+        public static bool MustNotIntercept(Type type)
+        {
+            return type.GetCustomAttribute<DoNotInterceptAttribute>() != null;
         }
     }
 }
