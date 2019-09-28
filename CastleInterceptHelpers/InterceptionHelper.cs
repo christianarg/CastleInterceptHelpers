@@ -9,6 +9,11 @@ namespace CastleInterceptHelpers
 {
     public static class InterceptionHelper
     {
+        public static IUnityContainer InterceptContainer(IUnityContainer unityContainer, Type[] globalInterceptors)
+        {
+            var interceptorInstances = globalInterceptors.Select(x => unityContainer.Resolve(x) as IInterceptor).ToArray();
+            return InterceptContainer(unityContainer, interceptorInstances);
+        }
         /// <summary>
         /// Creates a child container with all the registrations from the parent container intercepted by globalInterceptors
         /// and attribute interceptors
@@ -30,7 +35,7 @@ namespace CastleInterceptHelpers
                 if (ReflectionHelper.MustNotIntercept(registration.MappedToType))
                     continue;
 
-                var allInterceptors = globalInterceptors.Concat(ReflectionHelper.GetAttributeInterceptors(registration.MappedToType)).ToArray();
+                var allInterceptors = globalInterceptors.Concat(ReflectionHelper.GetAttributeInterceptors(registration.MappedToType, unityContainer)).ToArray();
 
                 var proxied = ProxyManager.Generator.CreateInterfaceProxyWithTarget(registration.RegisteredType, unityContainer.Resolve(registration.RegisteredType, registration.Name), allInterceptors);
 
@@ -42,10 +47,18 @@ namespace CastleInterceptHelpers
 
     public class ReflectionHelper
     {
-        public static IInterceptor[] GetAttributeInterceptors(Type type)
+        /// <summary>
+        /// Returns a list of interceptor instances
+        /// Instances are created with parent container so that if they have dependencies they are alse resolved
+        /// For example LoggingInterceptor may use a LoggingService as dependency
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="unityContainer"></param>
+        /// <returns></returns>
+        public static IInterceptor[] GetAttributeInterceptors(Type type, IUnityContainer unityContainer)
         {
             var interceptorTypes = type.GetCustomAttributes<InterceptWithAttribute>().Select(x => x.Interceptor).ToArray();
-            return interceptorTypes.Select(x => Activator.CreateInstance(x) as IInterceptor).ToArray();
+            return interceptorTypes.Select(x => unityContainer.Resolve(x) as IInterceptor).ToArray();
         }
 
         public static bool MustNotIntercept(Type type)

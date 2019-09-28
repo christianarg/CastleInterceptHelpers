@@ -1,6 +1,7 @@
 using Castle.DynamicProxy;
 using CastleInterceptHelpers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Reflection;
 using Unity;
 
@@ -29,6 +30,27 @@ namespace CastleInterceptHelpersTests
 
             var myService = unityContainer.Resolve<IMyFooService>();
             
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsTrue(MyInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyInterceptor.ExecutedAfter);
+        }
+
+        [TestMethod]
+        public void GlobalInterceptorTypesOverloadTest()
+        {
+            // ARRANGE
+            RealServiceExecuted.ResetExecuted();
+            MyInterceptor.ResetExecuted();
+
+            unityContainer.RegisterType<IMyFooService, MyFooService>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new Type[] { typeof(MyInterceptor) });
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
             // ACT
             myService.Execute();
 
