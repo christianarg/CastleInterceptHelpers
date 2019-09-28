@@ -76,10 +76,15 @@ namespace CastleWindsorResearch
         //{
         //	Container.RegisterType<TTo, TFrom>();
         //}
-        public static IUnityContainer CreateContainer()
+        public static IUnityContainer CreateContainer(IInterceptor[] globalInterceptors)
         {
             IUnityContainer unityContainer = new UnityContainer();
             ByConventionRegistrator.RegisterTypesByConvention(unityContainer);
+            return InterceptContainer(unityContainer, globalInterceptors);
+        }
+
+        private static IUnityContainer InterceptContainer(IUnityContainer unityContainer, IInterceptor[] globalInterceptors)
+        {
             var childContainer = unityContainer.CreateChildContainer();
             foreach (var registration in unityContainer.Registrations)
             {
@@ -89,7 +94,9 @@ namespace CastleWindsorResearch
                 if (!registration.RegisteredType.IsInterface)
                     continue;
 
-                var proxied = ProxyManager.Generator.CreateInterfaceProxyWithTarget(registration.RegisteredType, unityContainer.Resolve(registration.RegisteredType, registration.Name), new MyInterceptor());
+                var allInterceptors = globalInterceptors.Concat(ReflectionHelper.GetAttributeInterceptors(registration.MappedToType)).ToArray();
+                //ReflectionHelper.
+                var proxied = ProxyManager.Generator.CreateInterfaceProxyWithTarget(registration.RegisteredType, unityContainer.Resolve(registration.RegisteredType, registration.Name), allInterceptors);
 
                 childContainer.RegisterFactory(registration.RegisteredType, registration.Name, (c) => proxied);
             }
@@ -110,7 +117,7 @@ namespace CastleWindsorResearch
                 getLifetimeManager: WithLifetime.Custom<TransientLifetimeManager>);
         }
 
-       
+
 
         /// <summary>
         /// Obtenemos la lista de assembiles donde buscaremos las convenciones
@@ -183,8 +190,34 @@ namespace CastleWindsorResearch
         /// <returns></returns>
         private static Func<Type, bool> FilterTypesToRegisterByConvention()
         {
-            return t => true;    
+            return t => true;
             //return t => !t.IsSubclassOf(typeof(Controller));
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+    sealed class InterceptWithAttribute : Attribute
+    {
+        public Type Interceptor { get; }
+
+        public InterceptWithAttribute(Type interceptor)
+        {
+            Interceptor = interceptor;
+        }
+    }
+
+    public class ReflectionHelper
+    {
+        public static IInterceptor[] GetAttributeInterceptors(Type type)
+        {
+            var interceptorTypes = type.GetCustomAttributes<InterceptWithAttribute>().Select(x => x.Interceptor).ToArray();
+            return interceptorTypes.Select(x => Activator.CreateInstance(x) as IInterceptor).ToArray();
+
+        }
+    }
+
+    public class ProxyManager
+    {
+        public static readonly ProxyGenerator Generator = new ProxyGenerator();
     }
 }

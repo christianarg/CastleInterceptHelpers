@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Castle.DynamicProxy;
+using System;
 using Unity;
 
 namespace CastleWindsorResearch
@@ -10,7 +11,7 @@ namespace CastleWindsorResearch
         {
             //CreateProxy();
 
-            var container = UnityContainerFactory.CreateContainer();
+            var container = UnityContainerFactory.CreateContainer(new IInterceptor[0]);
 
             var myService = container.Resolve<IMyService>();
             myService.ExecuteCoso();

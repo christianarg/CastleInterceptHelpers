@@ -23,7 +23,7 @@ namespace CastleWindsorResearch
         void ExecuteCoso();
     }
 
-
+    [InterceptWith(typeof(SwallowExceptionsInterceptor))]
     public class MyServicePeta : IMyServicePeta
     {
         public void ExecuteCoso()
@@ -50,8 +50,22 @@ namespace CastleWindsorResearch
         }
     }
 
-    public class ProxyManager
+    public class SwallowExceptionsInterceptor : IInterceptor
     {
-        public static readonly ProxyGenerator Generator = new ProxyGenerator();
+        public void Intercept(IInvocation invocation)
+        {
+            Console.WriteLine("Before invocation");
+            try
+            {
+                invocation.Proceed();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ha petao {ex.ToString()}");
+            }
+            Console.WriteLine("After invocation");
+        }
     }
+
+
 }
