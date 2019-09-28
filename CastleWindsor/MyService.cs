@@ -1,4 +1,5 @@
 ﻿using Castle.DynamicProxy;
+using CastleInterceptHelpers;
 using System;
 using System.Collections.Generic;
 using System.Text;

@@ -1,5 +1,7 @@
 ﻿using Castle.DynamicProxy;
+using CastleInterceptHelpers;
 using System;
+using System.Reflection;
 using Unity;
 
 namespace CastleWindsorResearch
@@ -10,7 +12,7 @@ namespace CastleWindsorResearch
         static void Main(string[] args)
         {
             //CreateProxy();
-
+            ByConventionRegistrator.AssembliesForConventionRegistration = new[] { Assembly.GetExecutingAssembly() };
             var container = UnityContainerFactory.CreateContainer(new IInterceptor[0]);
 
             var myService = container.Resolve<IMyService>();
