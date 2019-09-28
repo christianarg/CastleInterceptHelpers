@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CastleInterceptHelpersOld\CastleInterceptHelpersOld.csproj" />
+    <ProjectReference Include="..\CastleInterceptHelpers\CastleInterceptHelpers.csproj" />
   </ItemGroup>
 
 </Project>

@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CastleInterceptHelpersTests", "CastleInterceptHelpersTests\CastleInterceptHelpersTests.csproj", "{91EFB28D-1ABE-49D9-9E45-881EDC1E055D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CastleInterceptHelpersOld", "CastleInterceptHelpersOld\CastleInterceptHelpersOld.csproj", "{65FE9FA4-B7CB-4AB0-A8BF-F01A3CB1AEBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CastleInterceptHelpers", "CastleInterceptHelpers\CastleInterceptHelpers.csproj", "{1BD3F115-549F-4901-9E42-B1A60C291339}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{91EFB28D-1ABE-49D9-9E45-881EDC1E055D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91EFB28D-1ABE-49D9-9E45-881EDC1E055D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91EFB28D-1ABE-49D9-9E45-881EDC1E055D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{65FE9FA4-B7CB-4AB0-A8BF-F01A3CB1AEBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{65FE9FA4-B7CB-4AB0-A8BF-F01A3CB1AEBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{65FE9FA4-B7CB-4AB0-A8BF-F01A3CB1AEBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{65FE9FA4-B7CB-4AB0-A8BF-F01A3CB1AEBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BD3F115-549F-4901-9E42-B1A60C291339}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BD3F115-549F-4901-9E42-B1A60C291339}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BD3F115-549F-4901-9E42-B1A60C291339}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BD3F115-549F-4901-9E42-B1A60C291339}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
