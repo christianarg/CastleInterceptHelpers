@@ -9,28 +9,52 @@ namespace CastleInterceptHelpersTests
     [TestClass]
     public class InterceptUtilitiesTests
     {
+        IUnityContainer unityContainer;
+
         [TestInitialize]
         public void Init()
         {
+            unityContainer = new UnityContainer();
         }
 
         [TestMethod]
         public void GlobalInterceptorTest()
         {
             // ARRANGE
-            MyFooService.Executed = false;
+            RealServiceExecuted.Executed = false;
             MyInterceptor.ResetExecuted();
 
-            IUnityContainer unityContainer = new UnityContainer();
             unityContainer.RegisterType<IMyFooService, MyFooService>();
             unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyInterceptor() });
 
             var myService = unityContainer.Resolve<IMyFooService>();
+            
             // ACT
             myService.Execute();
 
             // ASSERT
-            Assert.IsTrue(MyFooService.Executed);
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsTrue(MyInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyInterceptor.ExecutedAfter);
+        }
+
+        [TestMethod]
+        public void AttributeInterceptorTest()
+        {
+            // ARRANGE
+            RealServiceExecuted.Executed = false;
+            MyInterceptor.ResetExecuted();
+
+            unityContainer.RegisterType<IMyFooService, MyFooServiceWithAttributeInterceptor>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { });
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
             Assert.IsTrue(MyInterceptor.ExecutedBefore);
             Assert.IsTrue(MyInterceptor.ExecutedAfter);
         }
@@ -41,24 +65,38 @@ namespace CastleInterceptHelpersTests
         void Execute();
     }
 
-    public class MyFooService : IMyFooService
+    public static class RealServiceExecuted
     {
         public static bool Executed;
+    }
+
+    public class MyFooService : IMyFooService
+    {
         public void Execute()
         {
-            Executed = true;
+            RealServiceExecuted.Executed = true;
+        }
+    }
+
+    [InterceptWith(typeof(MyInterceptor))]
+    public class MyFooServiceWithAttributeInterceptor : IMyFooService
+    {
+        public void Execute()
+        {
+            RealServiceExecuted.Executed = true;
         }
     }
 
     public class MyInterceptor : IInterceptor
     {
+        public static bool ExecutedBefore;
+        public static bool ExecutedAfter;
+
         public static void ResetExecuted()
         {
             ExecutedBefore = false;
             ExecutedAfter = false;
         }
-        public static bool ExecutedBefore;
-        public static bool ExecutedAfter;
 
         public void Intercept(IInvocation invocation)
         {
