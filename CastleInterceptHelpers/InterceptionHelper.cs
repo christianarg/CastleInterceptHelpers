@@ -36,7 +36,7 @@ namespace CastleInterceptHelpers
                     continue;
 
                 var allInterceptors = globalInterceptors.Concat(ReflectionHelper.GetAttributeInterceptors(registration.MappedToType, unityContainer)).ToArray();
-
+                allInterceptors = ReflectionHelper.RemoveExcludedGlobalInterceptors(registration.MappedToType, allInterceptors);
                 var proxied = ProxyManager.Generator.CreateInterfaceProxyWithTarget(registration.RegisteredType, unityContainer.Resolve(registration.RegisteredType, registration.Name), allInterceptors);
 
                 childContainer.RegisterFactory(registration.RegisteredType, registration.Name, (c) => proxied);
@@ -64,6 +64,13 @@ namespace CastleInterceptHelpers
         public static bool MustNotIntercept(Type type)
         {
             return type.GetCustomAttribute<DoNotInterceptAttribute>() != null;
+        }
+
+        public static IInterceptor[] RemoveExcludedGlobalInterceptors(Type type, IInterceptor[] interceptors)
+        {
+            var globalInterceptorsToRemove = type.GetCustomAttributes<RemoveGlobalInterceptorAttribute>().Select(x => x.GlobalInterceptorToRemove).ToArray();
+
+            return interceptors.Where(x => globalInterceptorsToRemove.Any(y => y != x.GetType())).ToArray();
         }
     }
 }

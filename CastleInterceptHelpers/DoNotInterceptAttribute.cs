@@ -5,8 +5,5 @@ using System.Text;
 namespace CastleInterceptHelpers
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-    public sealed class DoNotInterceptAttribute : Attribute
-    {
-
-    }
+    public sealed class DoNotInterceptAttribute : Attribute { }
 }

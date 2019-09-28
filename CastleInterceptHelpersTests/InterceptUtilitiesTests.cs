@@ -29,7 +29,7 @@ namespace CastleInterceptHelpersTests
             unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyInterceptor() });
 
             var myService = unityContainer.Resolve<IMyFooService>();
-            
+
             // ACT
             myService.Execute();
 
@@ -125,6 +125,29 @@ namespace CastleInterceptHelpersTests
             Assert.IsFalse(MyInterceptor.ExecutedBefore);
             Assert.IsFalse(MyInterceptor.ExecutedAfter);
         }
+
+        [TestMethod]
+        public void RemoveGlobalInterceptorTest()
+        {
+            RealServiceExecuted.ResetExecuted();
+            MyInterceptor.ResetExecuted();
+            MyOtherInterceptor.ResetExecuted();
+
+            unityContainer.RegisterType<IMyFooService, MyFooServiceWithRemoveGlobalInterceptor>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyInterceptor(), new MyOtherInterceptor() });
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsTrue(MyInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyInterceptor.ExecutedAfter);
+            Assert.IsFalse(MyOtherInterceptor.ExecutedBefore);
+            Assert.IsFalse(MyOtherInterceptor.ExecutedAfter);
+        }
     }
 
     public interface IMyFooService
@@ -157,6 +180,15 @@ namespace CastleInterceptHelpersTests
 
     [DoNotIntercept]
     public class MyFooServiceWithDoNotInterceptAttribute : IMyFooService
+    {
+        public void Execute()
+        {
+            RealServiceExecuted.Executed = true;
+        }
+    }
+
+    [RemoveGlobalInterceptor(typeof(MyOtherInterceptor))]
+    public class MyFooServiceWithRemoveGlobalInterceptor : IMyFooService
     {
         public void Execute()
         {
