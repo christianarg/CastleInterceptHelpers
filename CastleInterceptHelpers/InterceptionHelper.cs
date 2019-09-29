@@ -10,7 +10,7 @@ namespace CastleInterceptHelpers
 {
     public static class InterceptionHelper
     {
-        public static IUnityContainer InterceptContainer(IUnityContainer unityContainer, Type[] globalInterceptors)
+        public static IUnityContainer InterceptContainer(IUnityContainer unityContainer, Type[] globalInterceptors, InterceptionOptions options = null)
         {
             var interceptorInstances = globalInterceptors.Select(x => unityContainer.Resolve(x) as IInterceptor).ToArray();
             return InterceptContainer(unityContainer, interceptorInstances);
@@ -22,8 +22,10 @@ namespace CastleInterceptHelpers
         /// <param name="unityContainer"></param>
         /// <param name="globalInterceptors"></param>
         /// <returns></returns>
-        public static IUnityContainer InterceptContainer(IUnityContainer unityContainer, IInterceptor[] globalInterceptors)
+        public static IUnityContainer InterceptContainer(IUnityContainer unityContainer, IInterceptor[] globalInterceptors, InterceptionOptions options = null)
         {
+            options = options ?? new InterceptionOptions();
+
             var childContainer = unityContainer.CreateChildContainer();
             foreach (var registration in unityContainer.Registrations)
             {
@@ -36,14 +38,45 @@ namespace CastleInterceptHelpers
                 if (ReflectionHelper.MustNotIntercept(registration.MappedToType))
                     continue;
 
-                var allInterceptors = globalInterceptors.Concat(ReflectionHelper.GetAttributeInterceptors(registration.MappedToType, unityContainer)).ToArray();
-                allInterceptors = ReflectionHelper.RemoveExcludedGlobalInterceptors(registration.MappedToType, allInterceptors);
+                var allInterceptors = GetInterceptors(unityContainer, globalInterceptors, registration, options);
+
                 var proxied = ProxyManager.Generator.CreateInterfaceProxyWithTarget(registration.RegisteredType, unityContainer.Resolve(registration.RegisteredType, registration.Name), allInterceptors);
 
                 childContainer.RegisterFactory(registration.RegisteredType, registration.Name, (c) => proxied);
             }
             return childContainer;
         }
+
+        private static IInterceptor[] GetInterceptors(IUnityContainer unityContainer, IInterceptor[] globalInterceptors, IContainerRegistration registration, InterceptionOptions options)
+        {
+            var attributeInterceptors = ReflectionHelper.GetAttributeInterceptors(registration.MappedToType, unityContainer);
+
+            var interceptors = new List<IInterceptor>();
+            if (options.GlobalInterceptorsOrder == GlobalInterceptorsOrder.AfterAttributeInterceptors)
+            {
+                interceptors.AddRange(attributeInterceptors);
+                interceptors.AddRange(globalInterceptors);
+            }
+            else
+            {
+                interceptors.AddRange(globalInterceptors);
+                interceptors.AddRange(attributeInterceptors);
+            }
+
+            return ReflectionHelper.RemoveExcludedGlobalInterceptors(registration.MappedToType, interceptors.ToArray());
+        }
+    }
+
+    public class InterceptionOptions
+    {
+        public GlobalInterceptorsOrder GlobalInterceptorsOrder { get; set; }
+    }
+
+
+    public enum GlobalInterceptorsOrder
+    {
+        BeforeAttributeInterceptors = 0,
+        AfterAttributeInterceptors = 1
     }
 
     public class ReflectionHelper
@@ -70,7 +103,7 @@ namespace CastleInterceptHelpers
         public static IInterceptor[] RemoveExcludedGlobalInterceptors(Type type, IInterceptor[] interceptors)
         {
             var globalInterceptorsToRemove = type.GetCustomAttributes<RemoveGlobalInterceptorAttribute>().Select(x => x.GlobalInterceptorToRemove).ToArray();
-            if(globalInterceptorsToRemove.Length == 0)
+            if (globalInterceptorsToRemove.Length == 0)
             {
                 return interceptors;
             }
