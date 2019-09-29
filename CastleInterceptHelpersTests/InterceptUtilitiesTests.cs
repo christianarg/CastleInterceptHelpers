@@ -110,6 +110,7 @@ namespace CastleInterceptHelpersTests
             RealServiceExecuted.ResetExecuted();
             MyInterceptor.ResetExecuted();
             MyOtherInterceptor.ResetExecuted();
+            InterceptorsCalled.ResetList();
 
             unityContainer.RegisterType<IMyFooService, MyFooServiceWithAttributeInterceptor>();
             unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyOtherInterceptor() });
@@ -125,6 +126,35 @@ namespace CastleInterceptHelpersTests
             Assert.IsTrue(MyInterceptor.ExecutedAfter);
             Assert.IsTrue(MyOtherInterceptor.ExecutedBefore);
             Assert.IsTrue(MyOtherInterceptor.ExecutedAfter);
+            Assert.IsTrue(InterceptorsCalled.List[0].GetType() == typeof(MyInterceptor));
+            Assert.IsTrue(InterceptorsCalled.List[1].GetType() == typeof(MyOtherInterceptor));
+        }
+
+        [TestMethod]
+        public void GlobalAndAttributeInterceptorConfigureOrderTest()
+        {
+            // ARRANGE
+            RealServiceExecuted.ResetExecuted();
+            MyInterceptor.ResetExecuted();
+            MyOtherInterceptor.ResetExecuted();
+            InterceptorsCalled.ResetList();
+
+            unityContainer.RegisterType<IMyFooService, MyFooServiceWithAttributeInterceptor>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { new MyOtherInterceptor() }, new InterceptionOptions {  GlobalInterceptorsOrder = GlobalInterceptorsOrder.AfterAttributeInterceptors});
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsTrue(MyInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyInterceptor.ExecutedAfter);
+            Assert.IsTrue(MyOtherInterceptor.ExecutedBefore);
+            Assert.IsTrue(MyOtherInterceptor.ExecutedAfter);
+            Assert.IsTrue(InterceptorsCalled.List[0].GetType() == typeof(MyOtherInterceptor));
+            Assert.IsTrue(InterceptorsCalled.List[1].GetType() == typeof(MyInterceptor));
         }
 
         [TestMethod]
