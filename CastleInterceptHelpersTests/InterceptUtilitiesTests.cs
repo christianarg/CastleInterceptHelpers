@@ -2,6 +2,7 @@ using Castle.DynamicProxy;
 using CastleInterceptHelpers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Unity;
 
@@ -81,6 +82,26 @@ namespace CastleInterceptHelpersTests
             Assert.IsTrue(MyInterceptor.ExecutedAfter);
         }
 
+        [TestMethod]
+        public void OrderedAttributeInterceptorTest()
+        {
+            // ARRANGE
+            RealServiceExecuted.ResetExecuted();
+            InterceptorsCalled.ResetList();
+
+            unityContainer.RegisterType<IMyFooService, MyFooServiceWithOrderedAttributeInterceptor>();
+            unityContainer = InterceptionHelper.InterceptContainer(unityContainer, new IInterceptor[] { });
+
+            var myService = unityContainer.Resolve<IMyFooService>();
+
+            // ACT
+            myService.Execute();
+
+            // ASSERT
+            Assert.IsTrue(RealServiceExecuted.Executed);
+            Assert.IsTrue(InterceptorsCalled.List[0].GetType() == typeof(MyInterceptor));
+            Assert.IsTrue(InterceptorsCalled.List[1].GetType() == typeof(MyOtherInterceptor));
+        }
 
         [TestMethod]
         public void GlobalAndAttributeInterceptorTest()
@@ -196,6 +217,25 @@ namespace CastleInterceptHelpersTests
         }
     }
 
+    [InterceptWith(interceptor: typeof(MyInterceptor), order: 1)]
+    [InterceptWith(interceptor: typeof(MyOtherInterceptor), order: 2)]
+    public class MyFooServiceWithOrderedAttributeInterceptor : IMyFooService
+    {
+        public void Execute()
+        {
+            RealServiceExecuted.Executed = true;
+        }
+    }
+
+    public static class InterceptorsCalled
+    {
+        public static List<IInterceptor> List { get; set; } = new List<IInterceptor>();
+        public static void ResetList()
+        {
+            List = new List<IInterceptor>();
+        }
+    }
+
     public class MyInterceptor : IInterceptor
     {
         public static bool ExecutedBefore;
@@ -212,6 +252,7 @@ namespace CastleInterceptHelpersTests
             ExecutedBefore = true;
             invocation.Proceed();
             ExecutedAfter = true;
+            InterceptorsCalled.List.Add(this);
         }
     }
 
@@ -231,6 +272,8 @@ namespace CastleInterceptHelpersTests
             ExecutedBefore = true;
             invocation.Proceed();
             ExecutedAfter = true;
+            InterceptorsCalled.List.Add(this);
+
         }
     }
 }

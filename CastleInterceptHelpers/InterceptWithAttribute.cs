@@ -6,10 +6,12 @@ namespace CastleInterceptHelpers
     public sealed class InterceptWithAttribute : Attribute
     {
         public Type Interceptor { get; }
+        public int Order { get; }
 
-        public InterceptWithAttribute(Type interceptor)
+        public InterceptWithAttribute(Type interceptor, int order = 0)
         {
             Interceptor = interceptor;
+            Order = order;
         }
     }
 }

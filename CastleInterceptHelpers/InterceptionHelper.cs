@@ -4,6 +4,7 @@ using System.Reflection;
 using Unity;
 using Unity.Resolution;
 using Castle.DynamicProxy;
+using System.Collections.Generic;
 
 namespace CastleInterceptHelpers
 {
@@ -57,7 +58,7 @@ namespace CastleInterceptHelpers
         /// <returns></returns>
         public static IInterceptor[] GetAttributeInterceptors(Type type, IUnityContainer unityContainer)
         {
-            var interceptorTypes = type.GetCustomAttributes<InterceptWithAttribute>().Select(x => x.Interceptor).ToArray();
+            var interceptorTypes = type.GetCustomAttributes<InterceptWithAttribute>().OrderByDescending(x => x.Order).Select(x => x.Interceptor).ToArray();
             return interceptorTypes.Select(x => unityContainer.Resolve(x) as IInterceptor).ToArray();
         }
 
@@ -69,8 +70,20 @@ namespace CastleInterceptHelpers
         public static IInterceptor[] RemoveExcludedGlobalInterceptors(Type type, IInterceptor[] interceptors)
         {
             var globalInterceptorsToRemove = type.GetCustomAttributes<RemoveGlobalInterceptorAttribute>().Select(x => x.GlobalInterceptorToRemove).ToArray();
+            if(globalInterceptorsToRemove.Length == 0)
+            {
+                return interceptors;
+            }
 
-            return interceptors.Where(x => globalInterceptorsToRemove.Any(y => y != x.GetType())).ToArray();
+            var result = new List<IInterceptor>();
+            foreach (var interceptor in interceptors)
+            {
+                if (globalInterceptorsToRemove.Any(x => x != interceptor.GetType()))
+                {
+                    result.Add(interceptor);
+                }
+            }
+            return result.ToArray();
         }
     }
 }
